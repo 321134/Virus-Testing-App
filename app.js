@@ -1,31 +1,27 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var config = require('./config');
-var mongoose = require('mongoose');
-var bodyParser = require('body-parser');
-var passport = require('passport');
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var authenticate = require('./authenticate');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const config = require('./config');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const passport = require('passport');
 
-//Initiating connection to MongoDB
-mongoose.Promise = global.Promise;
-mongoose.connect(config.mongoUrl);
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function() {
-  //We are connected!
-  console.log("Connected correctly to server");
-})
 
-var app = express();
+const indexRouter = require('./routes/index');
+const fileRouter = require('./routes/files');
+const usersRouter = require('./routes/users');
+const authenticate = require('./authenticate');
+
+//Connection for mongoose is shifted to files.js for reason to use "gfs" at '/download' endpoint
+const app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
+
+
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -35,8 +31,23 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
+//handling CORS errors
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Access-Token");
+  if(req.method == 'OPTIONS') {
+    res.header('Access-Control-Allow-Methods', 'PUT, POST, PATCH, DELETE, GET');
+    return res.status(200).json({});
+  }
+  next();
+});
+
+//routes
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/files', fileRouter);
 
 // passport config.
 app.use(passport.initialize());//Initializing passport.
@@ -56,5 +67,4 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
-
 module.exports = app;
