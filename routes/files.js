@@ -70,7 +70,7 @@ router.post('/upload', Verify.verifyOrdinaryUser, Verify.verifyAdmin, (req, res)
   });
 });
 //
-router.get('/download/:filename', Verify.verifyOrdinaryUser, (req, res) => {
+router.get('/download/:filename', (req, res) => {
   console.log('File name is: ' + req.params.filename);
   gfs.files.findOne({filename: req.params.filename}, (err, file) =>  {
     if(file.length === 0 || !file) {
@@ -105,7 +105,7 @@ router.get('/download/:filename', Verify.verifyOrdinaryUser, (req, res) => {
 });
 
 router.get('/', Verify.verifyOrdinaryUser, (req, res) => {
-  
+
   gfs.files.find().toArray((err, files) => {
     if(err) {
       return res.status(404).json({err: 'Something bad happened'});
